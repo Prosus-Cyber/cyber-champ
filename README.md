@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="cyber-champ.png" alt="Cyber Champion logo" width="240">
+  <img src="cyber-champ.png" alt="Cyber Champion logo" width="350">
 </p>
 
 # Cyber Champion (`cyber-champ`)
