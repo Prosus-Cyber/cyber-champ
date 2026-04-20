@@ -41,40 +41,64 @@ Security team needed
 
 ## Installation
 
-### Option A: Install as a plugin (recommended)
+First, clone the repo:
 
 ```bash
-# From the Claude Code CLI
-/plugin install /path/to/cyber-champ
+git clone https://github.com/Prosus-Cyber/cyber-champ.git
+cd cyber-champ
 ```
 
-Or for the whole team, add to your repo's `.claude/plugins/`:
-```bash
-cp -r cyber-champ /path/to/your/repo/.claude/plugins/
-```
-Commit the `.claude/plugins/cyber-champ/` directory so the whole team gets it automatically.
+`cyber-champ` ships as a self-contained Claude Code plugin (`.claude-plugin/plugin.json`) with its own local marketplace manifest (`.claude-plugin/marketplace.json`), so you can install it directly from the clone — no external marketplace required. Once installed, skills are invoked as `/cyber-champ:<skill-name>` (e.g. `/cyber-champ:security-review`).
 
-### Option B: Install as a skill bundle
+Pick one of the options below.
 
-Copy into the global skills directory:
-```bash
-cp -r cyber-champ ~/.claude/skills/
-```
+### Option A: Load as a plugin for a single session (quickest)
 
-Or per-repo:
-```bash
-cp -r cyber-champ /path/to/your/repo/.claude/skills/
-```
-
-### Option C: Symlink (for active development of the plugin)
+Point Claude Code at the plugin directory when you launch it:
 
 ```bash
-ln -s /path/to/cyber-champ ~/.claude/skills/cyber-champ
+claude --plugin-dir /path/to/cyber-champ
 ```
+
+Good for trying the plugin on a single project without persisting anything.
+
+### Option B: Install from the local marketplace (persistent, recommended)
+
+From inside a running Claude Code session:
+
+```
+/plugin marketplace add /path/to/cyber-champ
+/plugin install cyber-champ@cyber-champ
+```
+
+The plugin stays installed across sessions. Re-run `/plugin marketplace update cyber-champ` after a `git pull` to pick up changes (bump the `version` in `.claude-plugin/plugin.json` when publishing updates, or the cache won't refresh).
+
+### Option C: Share with a repo / team
+
+Commit a symlink or copy of the plugin into your repo at `.claude/plugins/cyber-champ/`, and teammates get it automatically when they open the repo in Claude Code:
+
+```bash
+# From your target repo
+mkdir -p .claude/plugins
+cp -r /path/to/cyber-champ .claude/plugins/cyber-champ
+git add .claude/plugins/cyber-champ && git commit -m "Add cyber-champ plugin"
+```
+
+### Option D: Install as a plain skill bundle (no plugin features)
+
+If you don't want the plugin wrapper, copy just the `skills/` contents:
+
+```bash
+cp -r skills/* ~/.claude/skills/
+```
+
+Skills are then invoked un-namespaced (`/security-review` instead of `/cyber-champ:security-review`), but you lose plugin-level versioning and the marketplace install flow.
 
 ---
 
 ## Usage
+
+> **Note on command names:** when installed as a plugin (Options A–C above), commands are namespaced — use `/cyber-champ:security-review` instead of `/security-review`, etc. The examples below show the bare form for readability; prefix with `cyber-champ:` if you went the plugin route.
 
 ### Early idea check — for product managers
 
