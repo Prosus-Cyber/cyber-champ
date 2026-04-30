@@ -36,6 +36,7 @@ In any Claude Code session, register and install:
 ```
 /plugin marketplace add ~/cyber-champ
 /plugin install cyber-champ@cyber-champ
+/reload-plugins
 ```
 
 Verify:
