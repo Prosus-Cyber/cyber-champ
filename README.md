@@ -4,227 +4,104 @@
 
 # Cyber Champion (`cyber-champ`)
 
-A Claude Code plugin for self-service security assessment. Helps developers and product managers identify Critical and High security issues — including AI-specific threats — without requiring the security team to be involved in every feature.
+A Claude Code plugin for PMs and tech leads on small, fast-moving teams. Surfaces 0–5 Critical/High security risks on an **AI-native consumer feature** before you commit to the approach. No jargon.
 
-Covers: traditional threats (OWASP Top 10, API Security, MASVS) and AI-specific threats (OWASP LLM Top 10 2025, MITRE ATLAS).
+The skill flags only **design-time risks** — things you can't fix later by writing better code: data sensitivity, AI blast radius, third-party model retention, default visibility, prompt-injection vectors against private user content.
 
----
+## Who this is for
 
-## Skills
+- Small teams shipping AI-native consumer / end-user apps.
+- **Not** for B2B SaaS hosting other companies' data.
+- **Not** for health or government data — talk to a security team directly for those.
 
-| Skill | For | When to use | Output |
-|---|---|---|---|
-| `/security-design-questions` | PMs / tech leads | Brainstorming a rough idea, before a formal spec exists | Inline red-flag summary |
-| `/threat-model` | PMs / tech leads | Drafting a feature spec or PRD | `docs/security/threat-model-<feature>.md` |
-| `/security-review` | Developers | Before opening a PR | `docs/security/review-<branch>.md` |
-| `/security-triage` | Either | A Critical/High finding needs security team input | `docs/security/escalation-<name>.md` |
+## What it does
 
-All four skills also auto-invoke when Claude detects the relevant context (rough feature ideas, spec files, security-sensitive code).
+- Takes a paragraph (Slack, Linear, Notion) or a `@file.md`.
+- Asks 2–6 PM-friendly questions.
+- Outputs 0–5 ranked Critical/High items, each with *what happens* and a *design choice now* you can decide today.
+- Add `--save` to write the report to `docs/security/feature-check-<slug>.md`.
 
-### When to use which skill
+## Install
 
-```
-Rough idea / 1-pager
-  → /security-design-questions    (5-min sanity check, 8 yes/no questions)
-        ↓ (3+ red flags or spec written)
-Full spec or PRD
-  → /threat-model                 (full STRIDE + AI checklist, written report)
-        ↓
-Code written, pre-PR
-  → /security-review              (code-level pattern scan, written report)
-        ↓ (Critical/High with no clear fix)
-Security team needed
-  → /security-triage              (structured escalation report)
-```
+**Requirements:** [Claude Code](https://claude.com/claude-code) and Git.
 
----
-
-## Installation
-
-First, clone the repo:
+Clone the repo:
 
 ```bash
-git clone https://github.com/Prosus-Cyber/cyber-champ.git
-cd cyber-champ
+cd ~ && git clone https://github.com/Prosus-Cyber/cyber-champ.git
 ```
 
-`cyber-champ` ships as a self-contained Claude Code plugin (`.claude-plugin/plugin.json`) with its own local marketplace manifest (`.claude-plugin/marketplace.json`), so you can install it directly from the clone — no external marketplace required. Once installed, skills are invoked as `/cyber-champ:<skill-name>` (e.g. `/cyber-champ:security-review`).
-
-Pick one of the options below.
-
-### Option A: Load as a plugin for a single session (quickest)
-
-Point Claude Code at the plugin directory when you launch it:
-
-```bash
-claude --plugin-dir /path/to/cyber-champ
-```
-
-Good for trying the plugin on a single project without persisting anything.
-
-### Option B: Install from the local marketplace (persistent, recommended)
-
-From inside a running Claude Code session:
+In any Claude Code session, register and install:
 
 ```
-/plugin marketplace add /path/to/cyber-champ
+/plugin marketplace add ~/cyber-champ
 /plugin install cyber-champ@cyber-champ
 ```
 
-The plugin stays installed across sessions. Re-run `/plugin marketplace update cyber-champ` after a `git pull` to pick up changes (bump the `version` in `.claude-plugin/plugin.json` when publishing updates, or the cache won't refresh).
+Verify:
 
-### Option C: Share with a repo / team
-
-Commit a symlink or copy of the plugin into your repo at `.claude/plugins/cyber-champ/`, and teammates get it automatically when they open the repo in Claude Code:
-
-```bash
-# From your target repo
-mkdir -p .claude/plugins
-cp -r /path/to/cyber-champ .claude/plugins/cyber-champ
-git add .claude/plugins/cyber-champ && git commit -m "Add cyber-champ plugin"
+```
+/cyber-champ:feature-security-check "Voice journaling app. Users record voice notes; GPT-4 summarizes them into a public mood card."
 ```
 
-### Option D: Install as a plain skill bundle (no plugin features)
+> If `/plugin marketplace add ~/cyber-champ` says path not found, your Claude Code didn't expand `~`. Run `echo ~/cyber-champ` in your terminal to print the full path (e.g. `/Users/yourname/cyber-champ`) and use that instead.
 
-If you don't want the plugin wrapper, copy just the `skills/` contents:
-
-```bash
-cp -r skills/* ~/.claude/skills/
-```
-
-Skills are then invoked un-namespaced (`/security-review` instead of `/cyber-champ:security-review`), but you lose plugin-level versioning and the marketplace install flow.
-
----
+To update later: `cd ~/cyber-champ && git pull` then `/plugin marketplace update cyber-champ`.
 
 ## Usage
 
-> **Note on command names:** when installed as a plugin (Options A–C above), commands are namespaced — use `/cyber-champ:security-review` instead of `/security-review`, etc. The examples below show the bare form for readability; prefix with `cyber-champ:` if you went the plugin route.
-
-### Early idea check — for product managers
+Paste mode (the usual way):
 
 ```
-/security-design-questions
+/cyber-champ:feature-security-check "Voice journaling app. Users record voice notes, we transcribe them, GPT-4 turns them into a daily mood summary the user can share to a public link. Using OpenAI's default API tier."
 ```
 
-Claude will ask you 8 yes/no questions about the feature idea and surface any red flags. If 3+ are flagged, it will recommend running `/threat-model` once the spec is written.
-
-### Threat modeling a feature spec
+From a file:
 
 ```
-/threat-model @docs/specs/my-feature.md
+/cyber-champ:feature-security-check @1-pager.md
 ```
 
-Output: `docs/security/threat-model-my-feature.md`
-
-**Show all severities (not just Critical/High):**
-```
-/threat-model verbosity: all @docs/specs/my-feature.md
-```
-
-### Reviewing code before a PR
+Interactive (the skill asks for a 2–3 sentence pitch first):
 
 ```
-/security-review
+/cyber-champ:feature-security-check
 ```
 
-Reviews all files changed on the current branch vs. the base branch (auto-detects `main`, `master`, `develop`, `trunk`).
+Add `--save` to any of the above to also write `docs/security/feature-check-<slug>.md`.
 
-**Review specific files:**
-```
-/security-review @src/api/routes/auth.ts @src/lib/llm.ts
-```
-
-**Show all severities:**
-```
-/security-review verbosity: all
-```
-
-Output: `docs/security/review-<branch>.md`
-
-### Escalating to the security team
-
-The `threat-model` and `security-review` skills automatically create an escalation report when they find a Critical/High issue without a clear mitigation. You can also invoke manually:
+## Example output
 
 ```
-/security-triage @docs/security/review-my-branch.md finding: FINDING-001
+[1] CRITICAL — Voice journal entries trained by the model vendor
+    What happens: We send users' raw voice journal transcripts to the
+    OpenAI default tier, which retains data for 30 days and may use
+    it for abuse review. A subpoena or vendor breach exposes private
+    diary content users believed was end-to-end ours.
+    Design choice now: Switch to OpenAI's zero-retention API tier
+    before launch (or self-host an open model for the journaling
+    path only). The choice changes the vendor contract — make it
+    before you build, not after.
+
+[2] CRITICAL — Default-public mood summary on private content
+    What happens: A "share to public link" default on a feature
+    backed by private journal entries will quietly publish content
+    users would never opt-in to share if asked.
+    Design choice now: Make the link share private-by-default, with
+    public sharing as an explicit opt-in per summary. Decide now —
+    flipping the default later breaks user trust.
+
+⚠ If any item is Critical, share this output with whoever owns
+security on your team before you commit to the approach.
 ```
 
-Output: `docs/security/escalation-<name>.md` — send this to the security team.
+## Tuning
 
----
+Edit the combination lookup in `skills/feature-security-check/SKILL.md` (Step 4) to recalibrate Critical vs. High for your org. Generic Critical/High definitions live in `references/severity-rubric.md`.
 
-## PR workflow integration
+## Out of scope
 
-Add this to your PR template:
-
-```markdown
-## Security
-- [ ] Ran `/security-review` before opening this PR
-- [ ] Link to security review: `docs/security/review-<branch>.md`
-  - [ ] No Critical or High findings, OR Critical/High findings documented and addressed/escalated
-```
-
----
-
-## Default behaviour: Critical and High only
-
-By default, all skills surface **Critical and High** findings only. Medium, Low, and Info findings are computed but suppressed. A footer in every report shows the count of suppressed findings.
-
-This is intentional: surfacing every minor issue trains developers to ignore the output. Critical and High are the findings that must be addressed before shipping.
-
-To see all severities: add `verbosity: all` to any invocation.
-
----
-
-## Knowledge base
-
-The `references/` directory is the authoritative source behind the skill logic. Skills read these files at runtime — updating a reference file immediately changes what Claude looks for and flags. Update these files when standards are revised:
-
-| File | Content |
-|---|---|
-| `references/severity-rubric.md` | Critical/High/Med/Low/Info definitions and suppression policy |
-| `references/owasp-llm-top-10.md` | OWASP LLM Top 10 2025 with code patterns |
-| `references/ai-feature-checklist.md` | Design-time AI security checklist |
-| `references/stride-worksheet.md` | STRIDE framework with AI-specific questions |
-| `references/owasp-top-10-web.md` | OWASP Top 10 Web 2021 |
-| `references/owasp-api-top-10.md` | OWASP API Security Top 10 2023 |
-| `references/owasp-masvs-mobile.md` | OWASP MASVS mobile security |
-| `references/mitre-atlas-summary.md` | MITRE ATLAS AI/ML threat techniques |
-| `references/nist-ai-rmf-summary.md` | NIST AI RMF governance questions |
-| `references/escalation-template.md` | Escalation report format reference |
-
----
-
-## Calibration (recommended before rollout)
-
-Before deploying org-wide:
-
-1. **Threat-model calibration:** Run `/threat-model` on 3 recent feature specs. Compare Critical/High output against what the security team would have flagged. Tune `references/severity-rubric.md` if the boundary is wrong.
-2. **Code-review calibration:** Run `/security-review` on 5 recent PRs the security team reviewed. Verify all their Critical/High findings are captured. Check false-positive rate (goal: fewer than 30% false positives on Critical/High findings).
-3. **AI red-team test:** Write a deliberately vulnerable AI feature (prompt injection sink, excessive agent scope, PII in prompt). Confirm both skills flag the AI-specific issues by OWASP LLM category.
-
-Re-calibrate quarterly as the threat landscape evolves. Update reference files only — the skills don't need to change.
-
----
-
-## Scope
-
-**In scope:** Threat modeling, code review (traditional + AI-specific), escalation reporting, early-stage security design questions.
-
-**Out of scope (use dedicated tools):**
-- Secrets scanning → GitGuardian, truffleHog, detect-secrets
-- Dependency CVE scanning → Dependabot, Snyk, `npm audit`, `pip audit`
-- DAST / runtime scanning → OWASP ZAP, Burp Suite
-- Privacy/compliance automated checks → dedicated DLP or compliance tooling
-
----
-
-## References
-
-- [OWASP LLM Top 10 2025](https://owasp.org/www-project-top-10-for-large-language-model-applications/)
-- [OWASP Top 10 Web 2021](https://owasp.org/www-project-top-ten/)
-- [OWASP API Security Top 10 2023](https://owasp.org/www-project-api-security/)
-- [OWASP MASVS](https://mas.owasp.org/MASVS/)
-- [MITRE ATLAS](https://atlas.mitre.org/)
-- [NIST AI RMF](https://www.nist.gov/system/files/documents/2023/01/26/AI%20RMF%201.0.pdf)
-- [Google SAIF](https://saif.google/)
+- Code-level security review (SQL injection, XSS, crypto misuse, deps) → use your code-review tool.
+- Secrets scanning → GitGuardian, truffleHog, detect-secrets.
+- Dependency CVEs → Dependabot, Snyk, `npm audit`.
+- DAST → OWASP ZAP, Burp Suite.

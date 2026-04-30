@@ -8,8 +8,8 @@
     {
       "name": "cyber-champ",
       "source": "./",
-      "version": "0.1.0",
-      "description": "Self-service security assessment: threat modeling, code review, and escalation for traditional and AI-specific threats."
+      "version": "0.2.0",
+      "description": "Early-stage security design check for PMs and tech leads. Surfaces 0–5 Critical/High design-time risks on a feature idea in under 5 minutes."
     }
   ]
 }

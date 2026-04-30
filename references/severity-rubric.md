@@ -1,6 +1,6 @@
 # Severity Rubric
 
-**Default behaviour: report Critical and High only.** Medium, Low, and Info findings are computed but suppressed unless the caller specifies `verbosity: all`.
+**Default behaviour: report Critical and High only.** Medium, Low, and Info findings are computed but suppressed.
 
 ## Severity Levels
 
@@ -33,9 +33,3 @@ Each finding also carries a confidence indicator:
 
 Only surface a Critical/High if confidence is Confirmed or Likely. "Needs human review" findings are noted but clearly marked as uncertain.
 
-## Override: show all severities
-
-```
-/threat-model verbosity: all @docs/specs/feature.md
-/security-review verbosity: all
-```
